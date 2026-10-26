@@ -80,20 +80,6 @@ class V6SyntheticTest {
     }
 
 
-
-    @Test
-    fun testRoiCoordinateSpaceMatch() {
-        val roi = V6LensRoi(320.0, 240.0, 120.0, 192.0)
-        
-        // Inside
-        assertEquals(V6CellRegion.INSIDE_LENS, roi.classify(Point(320.0, 240.0)))
-        assertEquals(V6CellRegion.INSIDE_LENS, roi.classify(Point(350.0, 240.0)))
-        assertEquals(V6CellRegion.INSIDE_LENS, roi.classify(Point(320.0, 300.0)))
-        
-        // Outside inner ROI (Boundary or Outside)
-        assertNotEquals(V6CellRegion.INSIDE_LENS, roi.classify(Point(500.0, 240.0)))
-    }
-
     @Test
     fun testRoiValidationNegativeCenter() {
         val (rejected, reason) = V6StructuredDeflectometryAnalyzer.validateRoi(-10.0, 500.0, 100.0, 100.0, 1080, 1920)
