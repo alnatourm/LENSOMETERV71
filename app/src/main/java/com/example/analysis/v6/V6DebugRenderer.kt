@@ -14,8 +14,7 @@ object V6DebugRenderer {
         rawLensPoints: List<Point>,
         refGrid: V6GridModel, 
         lensGrid: V6GridModel, 
-        commonKeys: Set<Pair<Int, Int>>,
-        roi: V6LensRoi? = null
+        commonKeys: Set<Pair<Int, Int>>
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -73,27 +72,6 @@ object V6DebugRenderer {
         canvas.drawText("Yellow Circle: Assigned Lens (${lensGrid.validCellCount})", 20f, y, textPaint.apply { color = Color.YELLOW }); y += 40f
         canvas.drawText("Cyan Vector: Common Cells (${commonKeys.size})", 20f, y, textPaint.apply { color = Color.CYAN }); y += 40f
 
-        
-        // 4. Draw ROI
-        if (roi != null) {
-            val paintRoiCenter = Paint().apply { color = Color.RED; strokeWidth = 5f; style = Paint.Style.STROKE }
-            val paintRoiInner = Paint().apply { color = Color.BLUE; strokeWidth = 5f; style = Paint.Style.STROKE }
-            val paintRoiOuter = Paint().apply { color = Color.GREEN; strokeWidth = 5f; style = Paint.Style.STROKE }
-            
-            canvas.drawLine((roi.centerX - 20).toFloat(), roi.centerY.toFloat(), (roi.centerX + 20).toFloat(), roi.centerY.toFloat(), paintRoiCenter)
-            canvas.drawLine(roi.centerX.toFloat(), (roi.centerY - 20).toFloat(), roi.centerX.toFloat(), (roi.centerY + 20).toFloat(), paintRoiCenter)
-            
-            canvas.drawCircle(roi.centerX.toFloat(), roi.centerY.toFloat(), roi.innerRadius.toFloat(), paintRoiInner)
-            canvas.drawCircle(roi.centerX.toFloat(), roi.centerY.toFloat(), roi.outerRadius.toFloat(), paintRoiOuter)
-        }
-        
-        // 5. Draw Image Bounds
-        val paintBounds = Paint().apply { color = Color.MAGENTA; strokeWidth = 8f; style = Paint.Style.STROKE }
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paintBounds)
-        
-        val paintText = Paint().apply { color = Color.MAGENTA; textSize = 60f; style = Paint.Style.FILL }
-        canvas.drawText("${width} x ${height}", 50f, 100f, paintText)
-        
         return bitmap
     }
 }
