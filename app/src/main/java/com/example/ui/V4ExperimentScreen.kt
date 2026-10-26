@@ -125,8 +125,7 @@ fun V4ExperimentScreen() {
                 
                 try {
                                         
-                                        cameraProvider.unbindAll()
-                        val camera = cameraProvider.bindToLifecycle(
+                                        val camera = cameraProvider.bindToLifecycle(
                         lifecycleOwner,
                         if (cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) CameraSelector.DEFAULT_BACK_CAMERA else CameraSelector.DEFAULT_FRONT_CAMERA,
                         preview,
