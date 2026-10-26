@@ -331,49 +331,9 @@ object V6StructuredDeflectometryAnalyzer {
         val refAssignmentPct = if (refPoints.isNotEmpty()) (refGrid.validCellCount.toDouble() / refPoints.size) * 100.0 else 0.0
         val lensAssignmentPct = if (lensPoints.isNotEmpty()) (lensGrid.validCellCount.toDouble() / lensPoints.size) * 100.0 else 0.0
         
-        
-        // Distance helper
-        fun dist(pt: Point, cx: Double, cy: Double) = Math.sqrt((pt.x - cx) * (pt.x - cx) + (pt.y - cy) * (pt.y - cy))
-
-        val assignedRefPts = refGrid.points.values.mapNotNull { it.observedPosition }
-        val assignedLensPts = lensGrid.points.values.mapNotNull { it.observedPosition }
-        val commonPts = commonKeys.mapNotNull { refGrid.points[it]?.observedPosition }
-
-        val nearestRef = assignedRefPts.minOfOrNull { dist(it, roi.centerX, roi.centerY) } ?: -1.0
-        val nearestLens = assignedLensPts.minOfOrNull { dist(it, roi.centerX, roi.centerY) } ?: -1.0
-        val nearestCommon = commonPts.minOfOrNull { dist(it, roi.centerX, roi.centerY) } ?: -1.0
-
         val telemetry = V6Telemetry(
-            analysisImageWidth = width,
-            analysisImageHeight = height,
-            rawRefMinX = refPoints.minOfOrNull { it.x } ?: 0.0,
-            rawRefMaxX = refPoints.maxOfOrNull { it.x } ?: 0.0,
-            rawRefMinY = refPoints.minOfOrNull { it.y } ?: 0.0,
-            rawRefMaxY = refPoints.maxOfOrNull { it.y } ?: 0.0,
-            assignedRefMinX = assignedRefPts.minOfOrNull { it.x } ?: 0.0,
-            assignedRefMaxX = assignedRefPts.maxOfOrNull { it.x } ?: 0.0,
-            assignedRefMinY = assignedRefPts.minOfOrNull { it.y } ?: 0.0,
-            assignedRefMaxY = assignedRefPts.maxOfOrNull { it.y } ?: 0.0,
-            assignedLensMinX = assignedLensPts.minOfOrNull { it.x } ?: 0.0,
-            assignedLensMaxX = assignedLensPts.maxOfOrNull { it.x } ?: 0.0,
-            assignedLensMinY = assignedLensPts.minOfOrNull { it.y } ?: 0.0,
-            assignedLensMaxY = assignedLensPts.maxOfOrNull { it.y } ?: 0.0,
-            commonMinX = commonPts.minOfOrNull { it.x } ?: 0.0,
-            commonMaxX = commonPts.maxOfOrNull { it.x } ?: 0.0,
-            commonMinY = commonPts.minOfOrNull { it.y } ?: 0.0,
-            commonMaxY = commonPts.maxOfOrNull { it.y } ?: 0.0,
-            nearestRefDistanceToRoiCenter = nearestRef,
-            nearestLensDistanceToRoiCenter = nearestLens,
-            nearestCommonDistanceToRoiCenter = nearestCommon,
-
             success = acceptedMeasurements.isNotEmpty(),
-            failureReason = if (refGrid.validCellCount > 100 && lensGrid.validCellCount > 100 && commonKeys.size > 100 && insideLensRefCells == 0 && insideLensLensCells == 0) {
-                "ROI_COORDINATE_SPACE_MISMATCH: roi=(${roi.centerX},${roi.centerY},R=${roi.innerRadius}), refPts=(${nearestRef})"
-            } else if (acceptedMeasurements.isEmpty()) {
-                "No accepted vectors"
-            } else {
-                ""
-            },
+            failureReason = if (acceptedMeasurements.isEmpty()) "No accepted vectors" else "",
             detectedReferencePoints = refPoints.size,
             detectedLensPoints = lensPoints.size,
             estimatedGridAngleDeg = refGrid.angleDeg,
@@ -420,7 +380,7 @@ object V6StructuredDeflectometryAnalyzer {
         )
         
         val debugBitmap = V6DebugRenderer.renderDebugBitmap(
-            width, height, refPoints, lensPoints, refGrid, lensGrid, commonKeys, roi
+            width, height, refPoints, lensPoints, refGrid, lensGrid, commonKeys
         )
         
         return V6Result(
