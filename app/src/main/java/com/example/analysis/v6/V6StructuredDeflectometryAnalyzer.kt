@@ -166,8 +166,8 @@ object V6StructuredDeflectometryAnalyzer {
         }
         if (providedRoi != null &&
             (!providedRoi.centerX.isFinite() || !providedRoi.centerY.isFinite() ||
-             providedRoi.centerX !in 0.0..<width.toDouble() ||
-             providedRoi.centerY !in 0.0..<height.toDouble() ||
+             (providedRoi.centerX < 0.0 || providedRoi.centerX >= width.toDouble()) ||
+             (providedRoi.centerY < 0.0 || providedRoi.centerY >= height.toDouble()) ||
              providedRoi.innerRadius <= 0.0 || providedRoi.outerRadius <= providedRoi.innerRadius)) {
             return V6Result(V6Telemetry(success = false, failureReason = "INVALID_LENS_ROI"))
         }
