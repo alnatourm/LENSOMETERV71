@@ -69,7 +69,7 @@ fun V7LiveCameraScreen() {
                         if (bitmap != null) {
                             val result = engine.process(bitmap, setReference.getAndSet(false))
                             ContextCompat.getMainExecutor(context).execute {
-                                display = result.first
+                                display = V7GridAndLensOverlay.render(result.first).first
                                 status = result.second
                                 referenceCount = engine.count
                             }
