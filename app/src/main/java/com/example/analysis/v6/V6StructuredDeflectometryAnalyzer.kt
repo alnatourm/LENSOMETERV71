@@ -134,12 +134,7 @@ object V6StructuredDeflectometryAnalyzer {
         val providedRoi = V6LensRoi(roiCenterX, roiCenterY, roiInnerR, roiOuterR)
         var result = analyzePoints(refPoints, lensPoints, imgW, imgH, providedRoi, roiSource, autoRoiRejected, autoRoiRejectReason, rawCx, rawCy, rawW, rawH)
         
-        // 4. After ROI generation, verify it produces some cells. Fall back if not.
-        if (roiSource == "AUTO" && (result.telemetry.insideLensCommonCells == 0 || result.telemetry.outsideLensRegistrationCells == 0)) {
-            val fallbackRoi = V6LensRoi(imgW / 2.0, imgH / 2.0, minDim * 0.25, minDim * 0.40)
-            result = analyzePoints(refPoints, lensPoints, imgW, imgH, fallbackRoi, "FALLBACK", true, "Zero valid cells inside/outside", rawCx, rawCy, rawW, rawH)
-        }
-        
+        // Preserve detected lens location even when there are no common grid cells.
         return@withContext result
     }
 
