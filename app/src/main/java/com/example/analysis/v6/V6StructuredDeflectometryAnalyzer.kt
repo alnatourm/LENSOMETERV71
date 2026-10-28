@@ -87,6 +87,10 @@ object V6StructuredDeflectometryAnalyzer {
         var roiSource = "FALLBACK"
         val imgW = noLensFrames[0].width
         val imgH = noLensFrames[0].height
+        if (noLensFrames.any { it.width != imgW || it.height != imgH } ||
+            withLensFrames.any { it.width != imgW || it.height != imgH }) {
+            return@withContext V6Result(V6Telemetry(success = false, failureReason = "ROI_COORDINATE_SPACE_MISMATCH: inconsistent frame dimensions"))
+        }
         val minDim = min(imgW, imgH)
         var roiCenterX = imgW / 2.0
         var roiCenterY = imgH / 2.0
@@ -153,6 +157,20 @@ object V6StructuredDeflectometryAnalyzer {
         rawEllipseWidth: Double = 0.0,
         rawEllipseHeight: Double = 0.0
     ): V6Result {
+        // The ROI and both point clouds must be expressed in the same pixel coordinate system.
+        // Do not silently process a resized/cropped frame with a full-frame ROI.
+        if (width <= 0 || height <= 0 ||
+            refPoints.any { !it.x.isFinite() || !it.y.isFinite() || it.x < 0.0 || it.y < 0.0 || it.x >= width || it.y >= height } ||
+            lensPoints.any { !it.x.isFinite() || !it.y.isFinite() || it.x < 0.0 || it.y < 0.0 || it.x >= width || it.y >= height }) {
+            return V6Result(V6Telemetry(success = false, failureReason = "ROI_COORDINATE_SPACE_MISMATCH: points outside image bounds"))
+        }
+        if (providedRoi != null &&
+            (!providedRoi.centerX.isFinite() || !providedRoi.centerY.isFinite() ||
+             providedRoi.centerX !in 0.0..<width.toDouble() ||
+             providedRoi.centerY !in 0.0..<height.toDouble() ||
+             providedRoi.innerRadius <= 0.0 || providedRoi.outerRadius <= providedRoi.innerRadius)) {
+            return V6Result(V6Telemetry(success = false, failureReason = "INVALID_LENS_ROI"))
+        }
         val refGrid = V6GridDetector.recoverZeroGrid(refPoints)
         val lensGrid = V6GridDetector.recoverLensGrid(lensPoints, refGrid)
         
