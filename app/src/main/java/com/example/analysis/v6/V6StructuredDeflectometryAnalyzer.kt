@@ -131,6 +131,13 @@ object V6StructuredDeflectometryAnalyzer {
             }
         }
         
+        // A guessed centered ROI is unsafe for a hand-held lens.
+        if (roiSource != "AUTO") {
+            return@withContext V6Result(V6Telemetry(
+                success = false,
+                failureReason = "LENS_ROI_NOT_DETECTED: keep the lens rim visible in the camera"
+            ))
+        }
         val providedRoi = V6LensRoi(roiCenterX, roiCenterY, roiInnerR, roiOuterR)
         var result = analyzePoints(refPoints, lensPoints, imgW, imgH, providedRoi, roiSource, autoRoiRejected, autoRoiRejectReason, rawCx, rawCy, rawW, rawH)
         
@@ -285,9 +292,22 @@ object V6StructuredDeflectometryAnalyzer {
                     val dyLens = pLensB.y - pLensA.y
                     val rLens = hypot(dxLens, dyLens)
                     
+                    // Reject implausible lattice-neighbor correspondences before fitting.
+                    if (rRef < 1e-6 || rLens < 1e-6) {
+                        rejectedGridMismatch++
+                        continue
+                    }
+                    val cosAgreement = (dxRef * dxLens + dyRef * dyLens) / (rRef * rLens)
+                    if (!cosAgreement.isFinite() || cosAgreement < cos(Math.toRadians(12.0))) {
+                        rejectedGridMismatch++
+                        continue
+                    }
                     val angle = Math.toDegrees(atan2(dyRef, dxRef))
-                    val ratio = if (rRef > 0) rLens / rRef else 1.0
-                    
+                    val ratio = rLens / rRef
+                    if (!ratio.isFinite() || ratio < 0.85 || ratio > 1.15) {
+                        rejectedGridMismatch++
+                        continue
+                    }
                     rawMeasurements.add(V6DirectionalMeasurement(angle, rRef, rLens, ratio, Pair(dr, dc), pLensA))
                 }
             }
