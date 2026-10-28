@@ -204,4 +204,22 @@ class V6SyntheticTest {
         assertEquals(441, result.telemetry.commonGridCells)
         assertEquals(1.05, result.telemetry.ratioMedian, 0.01)
     }
+    @Test
+    fun testRejectsPointsOutsideImageCoordinates() {
+        val ref = listOf(Point(20.0, 20.0), Point(40.0, 20.0), Point(20.0, 40.0))
+        val lens = listOf(Point(20.0, 20.0), Point(640.0, 20.0), Point(20.0, 40.0))
+        val result = V6StructuredDeflectometryAnalyzer.analyzePoints(ref, lens, 640, 480)
+        assertFalse(result.telemetry.success)
+        assertTrue(result.telemetry.failureReason.startsWith("ROI_COORDINATE_SPACE_MISMATCH"))
+    }
+
+    @Test
+    fun testRejectsInvalidHandheldLensRoi() {
+        val points = listOf(Point(20.0, 20.0), Point(40.0, 20.0), Point(20.0, 40.0))
+        val roi = V6LensRoi(700.0, 240.0, 40.0, 60.0)
+        val result = V6StructuredDeflectometryAnalyzer.analyzePoints(points, points, 640, 480, roi, "AUTO")
+        assertFalse(result.telemetry.success)
+        assertEquals("INVALID_LENS_ROI", result.telemetry.failureReason)
+    }
+
 }
