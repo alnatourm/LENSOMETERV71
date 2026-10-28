@@ -71,6 +71,9 @@ internal object V7InsideLensMeasurement {
             val dy = inside.map { it.second.y-it.first.y-motionY }
             val meanX = dx.average(); val meanY = dy.average()
             val rms = kotlin.math.sqrt(inside.indices.map { dx[it]*dx[it]+dy[it]*dy[it] }.average())
+            val affine = V7AffineOptics.fit(inside.indices.map { i ->
+                V7AffineOptics.Sample(inside[i].first.x, inside[i].first.y, dx[i], dy[i])
+            }, ellipse.center.x, ellipse.center.y)
             val output = frame.copy(Bitmap.Config.ARGB_8888, true)
             val canvas = Canvas(output)
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeWidth=2.5f; color=Color.YELLOW }
@@ -78,7 +81,8 @@ internal object V7InsideLensMeasurement {
                 canvas.drawLine(pair.first.x.toFloat(),pair.first.y.toFloat(),
                     (pair.first.x+dx[i]).toFloat(),(pair.first.y+dy[i]).toFloat(),paint)
             }
-            return output to "INSIDE ${inside.size} | X %.1f px | Y %.1f px | distortion %.1f px (RMS)".format(meanX,meanY,rms)
+            return output to ("INSIDE ${inside.size} | X %.1f px | Y %.1f px | shift RMS %.1f px | ".format(meanX,meanY,rms) +
+                (affine?.display() ?: "Affine fit unavailable"))
         } finally {
             contours.forEach { it.release() }
             rgba.release();gray.release();edges.release();blurred.release();hierarchy.release()
