@@ -140,6 +140,7 @@ private class LiveFeatureEngine {
             val refGray = referenceGray ?: return bitmap to "Tap SET REFERENCE without the lens"
             val refPoints = referenceFeatures ?: return bitmap to "Set reference first"
             if (count < 25) return bitmap to "Too few scene features. Aim at a textured scene."
+            return V7InsideLensMeasurement.analyze(refGray, refPoints, bitmap)
             val tracked = MatOfPoint2f()
             val status = MatOfByte()
             val errors = MatOfFloat()
