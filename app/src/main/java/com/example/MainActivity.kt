@@ -25,6 +25,7 @@ import com.example.ui.ExperimentScreen
 import com.example.ui.FocusExperimentScreen
 import com.example.ui.LensExperimentScreen
 import com.example.ui.V4ExperimentScreen
+import com.example.ui.V7LiveCameraScreen
 import com.example.ui.theme.MyApplicationTheme
 
 import org.opencv.android.OpenCVLoader
@@ -45,7 +46,7 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent {
       MyApplicationTheme {
-        var currentTab by remember { mutableStateOf(4) }
+        var currentTab by remember { mutableStateOf(7) }
         
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
           Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
@@ -87,6 +88,7 @@ class MainActivity : ComponentActivity() {
                         contentColor = if (currentTab == 4) Color(0xFF381E72) else Color.White
                     )
                 ) { Text("V4") }
+                Button(onClick = { currentTab = 7 }, modifier = Modifier.weight(1f), shape = RectangleShape) { Text("V7 LIVE") }
             }
             
             androidx.compose.foundation.layout.Box(modifier = Modifier.weight(1f)) {
@@ -95,6 +97,7 @@ class MainActivity : ComponentActivity() {
                   2 -> FocusExperimentScreen()
                   3 -> LensExperimentScreen()
                   4 -> V4ExperimentScreen()
+                  7 -> V7LiveCameraScreen()
               }
             }
           }
