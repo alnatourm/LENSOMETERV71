@@ -55,6 +55,8 @@ fun V7LiveCameraScreen() {
         val executor = Executors.newSingleThreadExecutor()
         val future = ProcessCameraProvider.getInstance(context)
         val engine = LiveFeatureEngine()
+        val motionGate = V7MotionGate()
+        var measurementLocked = false
         val listener = Runnable {
             try {
                 val provider = future.get()
@@ -64,15 +66,27 @@ fun V7LiveCameraScreen() {
                     .build()
                 analysis.setAnalyzer(executor) { frame ->
                     try {
-                        if (reset.getAndSet(false)) engine.clear()
+                        if (reset.getAndSet(false)) { engine.clear(); motionGate.reset(); measurementLocked = false }
                         val bitmap = v4ProxyToBitmap(frame)
                         if (bitmap != null) {
-                            val result = engine.process(bitmap, setReference.getAndSet(false))
-                            val overlay = V7GridAndLensOverlay.render(result.first)
-                            ContextCompat.getMainExecutor(context).execute {
-                                display = overlay.first
-                                status = result.second + " | " + overlay.second
-                                referenceCount = engine.count
+                            val capture = setReference.getAndSet(false)
+                            if (capture) { motionGate.reset(); measurementLocked = false }
+                            if (!measurementLocked) {
+                                val stability = motionGate.inspect(bitmap)
+                                val result = if (capture || stability.first) engine.process(bitmap, capture)
+                                    else bitmap to stability.second
+                                val goodFit = result.second.startsWith("INSIDE") &&
+                                    result.second.contains("Mag ") &&
+                                    Regex("fit RMS ([0-9.]+) px").find(result.second)
+                                        ?.groupValues?.get(1)?.toDoubleOrNull()?.let { it <= 2.0 } == true
+                                if (stability.first && goodFit) measurementLocked = true
+                                val overlay = V7GridAndLensOverlay.render(result.first)
+                                ContextCompat.getMainExecutor(context).execute {
+                                    display = overlay.first
+                                    status = if (measurementLocked) "MEASUREMENT CAPTURED | " + result.second
+                                        else result.second + " | " + overlay.second
+                                    referenceCount = engine.count
+                                }
                             }
                         }
                     } catch (_: Exception) {
