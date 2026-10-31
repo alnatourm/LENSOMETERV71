@@ -68,9 +68,10 @@ fun V7LiveCameraScreen() {
                         val bitmap = v4ProxyToBitmap(frame)
                         if (bitmap != null) {
                             val result = engine.process(bitmap, setReference.getAndSet(false))
+                            val overlay = V7GridAndLensOverlay.render(result.first)
                             ContextCompat.getMainExecutor(context).execute {
-                                display = V7GridAndLensOverlay.render(result.first).first
-                                status = result.second
+                                display = overlay.first
+                                status = result.second + " | " + overlay.second
                                 referenceCount = engine.count
                             }
                         }
@@ -141,38 +142,6 @@ private class LiveFeatureEngine {
             val refPoints = referenceFeatures ?: return bitmap to "Set reference first"
             if (count < 25) return bitmap to "Too few scene features. Aim at a textured scene."
             return V7InsideLensMeasurement.analyze(refGray, refPoints, bitmap)
-            val tracked = MatOfPoint2f()
-            val status = MatOfByte()
-            val errors = MatOfFloat()
-            try {
-                Video.calcOpticalFlowPyrLK(refGray, gray, refPoints, tracked, status, errors)
-                val original = refPoints.toArray()
-                val current = tracked.toArray()
-                val valid = status.toArray()
-                val output = bitmap.copy(Bitmap.Config.ARGB_8888, true)
-                val canvas = Canvas(output)
-                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeWidth = 2.5f }
-                var n = 0
-                val distances = mutableListOf<Double>()
-                for (i in original.indices) {
-                    if (i >= valid.size || i >= current.size || valid[i].toInt() == 0) continue
-                    val p = original[i]; val q = current[i]
-                    val d = hypot(q.x - p.x, q.y - p.y)
-                    if (!d.isFinite() || d > 80.0) continue
-                    n++; distances.add(d)
-                    paint.color = AndroidColor.YELLOW
-                    canvas.drawLine(p.x.toFloat(), p.y.toFloat(), q.x.toFloat(), q.y.toFloat(), paint)
-                    paint.color = AndroidColor.GREEN
-                    canvas.drawCircle(p.x.toFloat(), p.y.toFloat(), 3f, paint)
-                    paint.color = AndroidColor.RED
-                    canvas.drawCircle(q.x.toFloat(), q.y.toFloat(), 3f, paint)
-                }
-                val median = distances.sorted().let { if (it.isEmpty()) 0.0 else it[it.size / 2] }
-                val message = "Tracked: $n/$count | Median shift: %.1f px | Raw, uncalibrated".format(median)
-                return output to message
-            } finally {
-                tracked.release(); status.release(); errors.release()
-            }
         } finally { rgba.release(); gray.release() }
     }
 }
